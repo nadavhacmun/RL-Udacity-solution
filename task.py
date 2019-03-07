@@ -24,13 +24,56 @@ class Task():
         self.action_size = 4
 
         # Goal
-        self.target_pos = target_pos if target_pos is not None else np.array([0., 0., 10.]) 
+        self.target_pose = target_pos if target_pos is not None else np.array([0., 0., 10.]) 
 
     def get_reward(self):
-        """Uses current pose of sim to return reward."""
-        reward = 1.-.3*(abs(self.sim.pose[:3] - self.target_pos)).sum()
+        """Uses current pose of sim to return reward.
+        target_vector = self.target_pose - self.sim.pose[:3]
+        target_unit_vector = target_vector / np.sqrt(sum(target_vector ** 2))
+        
+        velocity_vector = self.sim.v
+        velocity_unit_vector = velocity_vector / np.sqrt(sum(velocity_vector ** 2))
+        
+        reward = np.dot(target_unit_vector, velocity_unit_vector)
+        if self.sim.v[2] >= 9.81:
+            reward *= 2
+        
+        #distance = np.sqrt(sum((self.target_pose - self.sim.pose[:3]) ** 2))
+        #reward += 1/distance
+        #if np.sqrt(sum(self.sim.v**2)) > 5:
+        #    reward -= sigmoid(np.sqrt(sum(self.sim.v**2)))
+        
+        return reward"""
+        """distance = np.sqrt(sum((self.target_pose - self.sim.pose[:3]) ** 2))
+        reward = (1 / distance) * 5
+        reward -= np.tanh(abs(self.sim.pose[0])) + np.tanh(abs(self.sim.pose[1]))
+        
+        return reward"""
+        """reward = 1.-.3*(abs(self.sim.pose[:3] - self.target_pose)).sum()
+        return reward"""
+        """distance = np.sqrt(sum((self.target_pose - self.sim.pose[:3]) ** 2))
+        reward = -distance
+        return reward"""
+        """distance = np.sqrt(sum((self.target_pose - self.sim.pose[:3]) ** 2))
+        reward = np.tanh(distance-10)
+        reward += np.tanh(self.sim.v[2])
+        return reward"""
+        """reward = self.sim.pose[2] + 1
+        if self.sim.pose[2] > 10:
+            reward -= self.sim.pose[2]
+        reward -= np.tanh(abs(self.sim.pose[1]) + abs(self.sim.pose[0]))
+        return reward"""
+        """reward = abs(self.sim.pose[:3] - self.target_pose).sum()
+        return -reward"""
+        if self.sim.pose[2] < 10:
+            reward = np.tanh(self.sim.pose[2])
+        elif self.sim.pose[2] > 10 and self.sim.pose[2] < 20:
+            reward = np.tanh(20 - self.sim.pose[2])
+        else:
+            reward = -0.2 
+        reward -= np.tanh((abs(self.sim.pose[1]) + abs(self.sim.pose[0])))
         return reward
-
+            
     def step(self, rotor_speeds):
         """Uses action to obtain next state, reward, done."""
         reward = 0
@@ -47,3 +90,6 @@ class Task():
         self.sim.reset()
         state = np.concatenate([self.sim.pose] * self.action_repeat) 
         return state
+    
+def sigmoid(x):
+    return 1/(1+np.exp(-x))
